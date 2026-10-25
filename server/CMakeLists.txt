@@ -637,6 +637,8 @@ add_executable(${SETTINGS_EXECUTABLE_NAME} WIN32
     "./src/cloud/translation_gloss.h"
     "./src/voice-input/doubao_asr_client.cpp"
     "./src/voice-input/doubao_asr_client.h"
+    "./src/voice-input/voice_batch_protocol.cpp"
+    "./src/voice-input/voice_batch_protocol.h"
     "./src/voice-input/voice_providers.cpp"
     "./src/voice-input/voice_providers.h"
     "./src/clipboard/clipboard_history.cpp"
@@ -657,6 +659,8 @@ target_include_directories(${SETTINGS_EXECUTABLE_NAME}
 target_link_libraries(${SETTINGS_EXECUTABLE_NAME} PRIVATE
     msimeui
     MetasequoiaIme::Engine
+    # voice_batch_protocol.cpp is shared with the Server; its request codecs live in Voice.
+    MetasequoiaIme::Voice
     fmt::fmt
     Boost::locale
     Boost::json

@@ -889,9 +889,12 @@ bool LoadImeConfig()
             }
             voice.asr_token = stored;
         }
+        // A config without an endpoint falls back to the selected provider's own default, not to
+        // SiliconFlow's URL: that was the wrong service for every provider except SiliconFlow.
+        const std::string default_asr_endpoint = VoiceInput::DefaultAsrEndpoint(voice.asr_provider);
         voice.asr_endpoint = tbl["voice_input"]["asr_endpoint"].value_or(
-            voice.asr_provider == "doubao" ? std::string("wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_async")
-                                           : std::string("https://api.siliconflow.cn/v1/audio/transcriptions"));
+            default_asr_endpoint.empty() ? std::string("https://api.siliconflow.cn/v1/audio/transcriptions")
+                                         : default_asr_endpoint);
         if (voice.asr_provider == "doubao" &&
             voice.asr_endpoint == "https://api.siliconflow.cn/v1/audio/transcriptions")
         {

@@ -64,6 +64,11 @@ bool IsDoubaoAsrProvider(std::string_view provider)
     return Lower(provider) == "doubao";
 }
 
+bool IsMimoAsrProvider(std::string_view provider)
+{
+    return Lower(provider) == "mimo";
+}
+
 std::string NormalizeProviderId(std::string_view provider)
 {
     return Lower(provider);
@@ -187,8 +192,8 @@ std::string LookupToken(const std::map<std::string, std::string> &tokens, std::s
 
 const std::vector<std::string_view> &AsrProviders()
 {
-    static const std::vector<std::string_view> kProviders{"doubao", "openai",  "siliconflow", "groq",
-                                                          "zhipu",  "minimax", "custom"};
+    static const std::vector<std::string_view> kProviders{"doubao", "openai", "siliconflow", "groq",
+                                                          "mimo",   "zhipu",  "minimax",     "custom"};
     return kProviders;
 }
 
@@ -245,6 +250,8 @@ std::string DefaultAsrEndpoint(std::string_view provider)
         return "https://open.bigmodel.cn/api/paas/v4/audio/transcriptions";
     if (id == "minimax")
         return "https://api.minimax.cn/v1/speech_to_text";
+    if (id == "mimo")
+        return "https://api.xiaomimimo.com/v1/chat/completions";
     if (id == "doubao")
         return "wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_async";
     return "https://api.siliconflow.cn/v1/audio/transcriptions";
@@ -263,6 +270,8 @@ std::string DefaultAsrModel(std::string_view provider)
         return "glm-asr";
     if (id == "minimax")
         return "asr-1.0";
+    if (id == "mimo")
+        return "mimo-v2.5-asr";
     if (id == "doubao")
         return {};
     return "FunAudioLLM/SenseVoiceSmall";

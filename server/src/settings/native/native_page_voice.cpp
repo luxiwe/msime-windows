@@ -24,6 +24,8 @@ const std::map<std::string, ProviderDefaults> &AsrDefaults()
         {"openai", {"https://api.openai.com/v1/audio/transcriptions", "whisper-1"}},
         {"siliconflow", {"https://api.siliconflow.cn/v1/audio/transcriptions", "FunAudioLLM/SenseVoiceSmall"}},
         {"groq", {"https://api.groq.com/openai/v1/audio/transcriptions", "whisper-large-v3-turbo"}},
+        // MiMo 的语音识别挂在 Chat Completions 上，音频以 base64 data URL 传入。
+        {"mimo", {"https://api.xiaomimimo.com/v1/chat/completions", "mimo-v2.5-asr"}},
     };
     return defaults;
 }
@@ -39,7 +41,7 @@ const std::map<std::string, ProviderDefaults> &PolishDefaults()
     return defaults;
 }
 
-const std::vector<std::string> kAsrProviders = {"doubao", "openai", "siliconflow", "groq"};
+const std::vector<std::string> kAsrProviders = {"doubao", "openai", "siliconflow", "groq", "mimo"};
 const std::vector<std::string> kPolishProviders = {"siliconflow", "openai", "deepseek", "groq"};
 // The Server rejects an empty Resource ID, so a cleared field falls back to the hourly 2.0 resource.
 constexpr char kDoubaoDefaultResourceId[] = "volc.seedasr.sauc.duration";
@@ -532,11 +534,15 @@ struct VoicePage : std::enable_shared_from_this<VoicePage>
         {
             auto column = std::make_shared<Column>(0.0f);
             column->Add(Heading(L"ASR API"));
-            column->Add(SectionDescription(L"豆包为流式识别；OpenAI、SiliconFlow、Groq 走 OpenAI 兼容的语音转写接口。"
+            column->Add(SectionDescription(L"豆包为流式识别；OpenAI、SiliconFlow、Groq 走 OpenAI 兼容的语音转写接口；"
+                                           L"小米 MiMo 走 Chat Completions 语音识别接口。"
                                            L"每个提供商的 Token 分开保存，切换时只换当前使用的那一份。"));
             auto grid = std::make_shared<FormGrid>();
-            asrProviderDropdown = MakeGridDropdown(Options(
-                {{"doubao", L"豆包"}, {"openai", L"OpenAI"}, {"siliconflow", L"SiliconFlow"}, {"groq", L"Groq"}}));
+            asrProviderDropdown = MakeGridDropdown(Options({{"doubao", L"豆包"},
+                                                            {"openai", L"OpenAI"},
+                                                            {"siliconflow", L"SiliconFlow"},
+                                                            {"groq", L"Groq"},
+                                                            {"mimo", L"小米 MiMo"}}));
             asrProviderDropdown->SetOnChanged(
                 [this](size_t, const DropdownOption &option) { SwitchAsrProvider(option.value); });
             grid->Add(std::make_shared<Field>(L"服务提供商", asrProviderDropdown));

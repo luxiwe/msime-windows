@@ -13,6 +13,7 @@
 #include "config/ai_provider.h"
 #include "config/ime_config.h"
 #include "voice-input/doubao_asr_client.h"
+#include "voice-input/voice_batch_protocol.h"
 #include "voice-input/voice_providers.h"
 
 #include "utils/network_proxy.h"
@@ -276,6 +277,34 @@ std::vector<unsigned char> SilentWav()
     return wav;
 }
 
+// MiMo does not expose /audio/transcriptions: the probe has to send the same Chat Completions
+// body the real recognition sends, otherwise a working key would be reported as invalid.
+ApiCredentialTest::Result TestMimoAsr(const ApiCredentialTest::Request &request)
+{
+    const std::string token = Value(request, "token");
+    const std::string endpoint = Value(request, "endpoint");
+    const std::string model = Value(request, "model");
+    if (!CloudTranslation::IsUsableSecret(token))
+        return {false, "请先填写有效的 API Key。"};
+    if (!IsHttpEndpoint(endpoint) || model.empty())
+        return {false, "请填写以 http:// 或 https:// 开头的接口地址和模型名。"};
+    const auto wav = SilentWav();
+    std::string payload;
+    try
+    {
+        payload = VoiceInput::BuildMimoTranscriptionBody(
+            std::string_view(reinterpret_cast<const char *>(wav.data()), wav.size()), model, "zh");
+    }
+    catch (const std::exception &)
+    {
+        return {false, "无法构建语音识别测试请求。"};
+    }
+    const HttpResponse response = PerformJsonRequest(endpoint, token, &payload);
+    if (response.code != CURLE_OK || response.status < 200 || response.status >= 300)
+        return {false, "测试失败：" + ErrorDetail(response)};
+    return {true, "连接成功，API Key 和模型配置有效。"};
+}
+
 ApiCredentialTest::Result TestBatchAsr(const ApiCredentialTest::Request &request)
 {
     const std::string token = Value(request, "token");
@@ -377,7 +406,10 @@ Result Run(const Request &request)
         return TestChat(request);
     if (request.service == "voice.asr")
     {
-        if (Value(request, "provider") != "doubao")
+        const std::string provider = VoiceInput::NormalizeProviderId(Value(request, "provider"));
+        if (provider == "mimo")
+            return TestMimoAsr(request);
+        if (provider != "doubao")
             return TestBatchAsr(request);
         const bool legacy = Value(request, "authMode") == "legacy";
         const std::string app_id = Value(request, "appId");

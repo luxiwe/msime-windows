@@ -479,8 +479,9 @@ hotkey_ctrl_f9 = true
 hotkey_ctrl_win = false
 hotkey_rctrl_ralt = false
 hotkey_hold_space_lock = true
-# ASR 服务: doubao | openai | siliconflow | groq
-# openai / siliconflow / groq 均走 OpenAI 兼容的 /v1/audio/transcriptions。
+# ASR 服务: doubao | openai | siliconflow | groq | mimo
+# openai / siliconflow / groq 均走 OpenAI 兼容的 /v1/audio/transcriptions；
+# 小米 MiMo 走 Chat Completions（音频以 base64 传入），默认 https://api.xiaomimimo.com/v1/chat/completions。
 asr_provider = "doubao"
 # 豆包鉴权方式: api_key | legacy
 #   api_key：新版控制台，只需一个 API Key，填入 asr_token 即可，asr_app_key 不使用。
@@ -495,6 +496,7 @@ asr_token_doubao = "<YOUR_ASR_TOKEN_DOUBAO>"
 asr_token_openai = "<YOUR_ASR_TOKEN_OPENAI>"
 asr_token_siliconflow = "<YOUR_ASR_TOKEN_SILICONFLOW>"
 asr_token_groq = "<YOUR_ASR_TOKEN_GROQ>"
+asr_token_mimo = "<YOUR_ASR_TOKEN_MIMO>"
 asr_token_zhipu = "<YOUR_ASR_TOKEN_ZHIPU>"
 asr_token_minimax = "<YOUR_ASR_TOKEN_MINIMAX>"
 asr_token_custom = "<YOUR_ASR_TOKEN_CUSTOM>"
@@ -511,7 +513,7 @@ doubao_enable_ddc = false
 # 在豆包语音控制台“自学习平台 -> 热词管理”创建词表后，将热词 ID 填在这里；留空则不使用。
 doubao_boosting_table_id = ""
 # OpenAI 兼容识别模型。豆包流式不使用此项；留空则按提供商填默认值。
-# SiliconFlow 当前默认使用 FunAudioLLM/SenseVoiceSmall，也可在这里填写其他模型名。
+# SiliconFlow 默认 FunAudioLLM/SenseVoiceSmall，小米 MiMo 默认 mimo-v2.5-asr，也可在这里填写其他模型名。
 asr_model = ""
 # 文本润色: siliconflow | openai | deepseek | groq
 # 均走 OpenAI 兼容的 /v1/chat/completions。

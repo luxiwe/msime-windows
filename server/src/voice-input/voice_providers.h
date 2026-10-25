@@ -28,6 +28,9 @@ inline constexpr std::string_view kDoubaoEndpointNostream =
 inline constexpr std::string_view kDoubaoEndpointAsync = "wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_async";
 
 bool IsDoubaoAsrProvider(std::string_view provider);
+// MiMo ASR is not a multipart /audio/transcriptions provider: the audio travels as a base64
+// data URL inside a Chat Completions request, so the request builder has to branch on this.
+bool IsMimoAsrProvider(std::string_view provider);
 std::string NormalizeProviderId(std::string_view provider);
 // DeepSeek thinking levels: disabled | low | high | max (the latter three are sent as reasoning_effort).
 bool IsValidThinkingLevel(std::string_view level);

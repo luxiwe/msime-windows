@@ -275,6 +275,9 @@ target_include_directories(MetasequoiaImeSettingsUiTests PRIVATE "${CMAKE_BINARY
 target_link_libraries(MetasequoiaImeSettingsUiTests PRIVATE
     msimeui
     MetasequoiaIme::Engine
+    # The settings sources now include voice_batch_protocol.cpp (shared with the Server), whose
+    # request codecs live in Voice; the include directories come with the target.
+    MetasequoiaIme::Voice
     fmt::fmt
     Boost::locale
     Boost::json

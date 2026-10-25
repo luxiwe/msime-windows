@@ -79,3 +79,43 @@ TEST_CASE(voice_batch_protocol_sends_deepseek_thinking_level)
     REQUIRE(!foreign.contains("reasoning_effort"));
     REQUIRE(!foreign.contains("enable_thinking"));
 }
+
+TEST_CASE(voice_batch_protocol_builds_mimo_chat_completions_request)
+{
+    VoiceInputConfig config;
+    config.asr_provider = "mimo";
+    config.language = "zh-cn";
+    config.asr_model.clear();
+    const std::vector<float> samples(1600, 0.0f);
+    auto body = nlohmann::json::parse(VoiceInput::BuildMimoTranscription(samples, config));
+    REQUIRE_EQ(body["model"].get<std::string>(), "mimo-v2.5-asr");
+    REQUIRE_EQ(body["stream"].get<bool>(), false);
+    REQUIRE_EQ(body["asr_options"]["language"].get<std::string>(), "zh");
+    REQUIRE_EQ(body["messages"][0]["role"].get<std::string>(), "user");
+    REQUIRE_EQ(body["messages"][0]["content"][0]["type"].get<std::string>(), "input_audio");
+    const std::string data = body["messages"][0]["content"][0]["input_audio"]["data"].get<std::string>();
+    // The data URL still carries the same WAV: base64("RIFF") starts with "UklGR".
+    REQUIRE(data.rfind("data:audio/wav;base64,UklGR", 0) == 0);
+
+    // MiMo only accepts auto/zh/en; anything else is handed to its own detection.
+    config.language = "en";
+    body = nlohmann::json::parse(VoiceInput::BuildMimoTranscription(samples, config));
+    REQUIRE_EQ(body["asr_options"]["language"].get<std::string>(), "en");
+    config.language = "auto";
+    body = nlohmann::json::parse(VoiceInput::BuildMimoTranscription(samples, config));
+    REQUIRE_EQ(body["asr_options"]["language"].get<std::string>(), "auto");
+
+    // The non-streaming reply keeps the transcript in choices[0].message.content.
+    std::string text;
+    REQUIRE(VoiceInput::ParseMimoTranscription(
+        R"({"object":"chat.completion","choices":[{"index":0,"message":{"role":"assistant","content":"你好，世界。"}}]})",
+        text));
+    REQUIRE_EQ(text, "你好，世界。");
+    // A gateway that wraps the content in parts must still yield the text.
+    REQUIRE(VoiceInput::ParseMimoTranscription(
+        R"({"choices":[{"message":{"content":[{"type":"text","text":"分片"}]}}]})", text));
+    REQUIRE_EQ(text, "分片");
+    REQUIRE(!VoiceInput::ParseMimoTranscription(R"({"choices":[]})", text));
+    REQUIRE_EQ(text, "");
+    REQUIRE(!VoiceInput::ParseMimoTranscription("not json", text));
+}

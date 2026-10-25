@@ -18,7 +18,22 @@ TEST_CASE(voice_providers_resolve_openai_compatible_defaults)
     REQUIRE_EQ(VoiceInput::DefaultAsrModel("minimax"), "asr-1.0");
     REQUIRE_EQ(VoiceInput::AsrTokenSlotKey("minimax"), "asr_token_minimax");
     REQUIRE_EQ(VoiceInput::AsrTokenSlotKey("siliconflow"), "asr_token_siliconflow");
+    // 小米 MiMo 的识别挂在 Chat Completions 上（音频以 base64 传入），默认地址和模型都与
+    // OpenAI 兼容转写接口不同，不能落进 SiliconFlow 的默认值。
+    REQUIRE(VoiceInput::IsMimoAsrProvider("mimo"));
+    REQUIRE(VoiceInput::IsMimoAsrProvider("MiMo"));
+    REQUIRE(!VoiceInput::IsMimoAsrProvider("openai"));
+    REQUIRE_EQ(VoiceInput::DefaultAsrEndpoint("mimo"), "https://api.xiaomimimo.com/v1/chat/completions");
+    REQUIRE_EQ(VoiceInput::DefaultAsrModel("mimo"), "mimo-v2.5-asr");
+    REQUIRE_EQ(VoiceInput::AsrTokenSlotKey("mimo"), "asr_token_mimo");
     REQUIRE(VoiceInput::IsPlaceholderToken("<YOUR_OWN_DOUBAO_ACCESS_TOKEN>"));
+    {
+        VoiceInputConfig config;
+        config.asr_provider = "mimo";
+        config.asr_tokens["mimo"] = "sk-mimo";
+        REQUIRE_EQ(VoiceInput::ResolveAsrToken(config), "sk-mimo");
+        REQUIRE_EQ(VoiceInput::ResolveAsrModel(config), "mimo-v2.5-asr");
+    }
     {
         VoiceInputConfig config;
         config.asr_provider = "doubao";

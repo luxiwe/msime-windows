@@ -687,15 +687,24 @@ RecognitionResult Recognize(const std::vector<float> &samples, const VoiceInputC
     if (model_name.empty())
         return {{}, "ASR 模型名为空。"};
     const bool siliconflow = IsSiliconFlowAsr(config);
+    // MiMo takes the audio as base64 inside a Chat Completions JSON body; every other batch
+    // provider still speaks multipart /audio/transcriptions.
+    const bool mimo = VoiceInput::IsMimoAsrProvider(config.asr_provider);
     metasequoia::voice::MultipartRequest payload;
+    std::string json_payload;
     try
     {
-        payload = VoiceInput::BuildBatchTranscription(samples, config);
+        if (mimo)
+            json_payload = VoiceInput::BuildMimoTranscription(samples, config);
+        else
+            payload = VoiceInput::BuildBatchTranscription(samples, config);
     }
     catch (const metasequoia::voice::VoiceError &)
     {
-        return {{}, "录音数据无效或超过 20 MiB 上传限制。"};
+        return {{}, "录音数据无效或超过上传限制。"};
     }
+    const std::string &body = mimo ? json_payload : payload.body;
+    const std::string content_type = mimo ? std::string("application/json") : payload.content_type;
     const int attempts = siliconflow ? 2 : 1;
     std::string response;
     std::string trace_id;
@@ -716,13 +725,13 @@ RecognitionResult Recognize(const std::vector<float> &samples, const VoiceInputC
         headers = curl_slist_append(headers, ("Authorization: Bearer " + asr_token).c_str());
         // Some gateways 500 on libcurl's default Expect: 100-continue.
         headers = curl_slist_append(headers, "Expect:");
-        headers = curl_slist_append(headers, ("Content-Type: " + payload.content_type).c_str());
+        headers = curl_slist_append(headers, ("Content-Type: " + content_type).c_str());
         curl_easy_setopt(curl, CURLOPT_URL, config.asr_endpoint.c_str());
         NetworkProxy::ApplyToCurl(curl);
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
         curl_easy_setopt(curl, CURLOPT_POST, 1L);
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.body.data());
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE, static_cast<curl_off_t>(payload.body.size()));
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.data());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE, static_cast<curl_off_t>(body.size()));
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteResponse);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
         curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, WriteHeader);
@@ -757,6 +766,13 @@ RecognitionResult Recognize(const std::vector<float> &samples, const VoiceInputC
                 detail += " 追踪 ID：" + trace_id + "。";
         }
         return {{}, "语音识别失败：" + detail};
+    }
+    if (mimo)
+    {
+        std::string text;
+        if (!VoiceInput::ParseMimoTranscription(response, text))
+            return {{}, "语音识别返回了无法解析的结果。"};
+        return {text, {}};
     }
     try
     {
