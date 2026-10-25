@@ -3,6 +3,7 @@
 #include "../enumeration_comma.h"
 #include "../ipc_negotiation.h"
 #include "../mid_sentence_helpcode.h"
+#include "../radical_input.h"
 #include "../trilingual_input.h"
 #include "../temporary_japanese_input.h"
 #include "../uiless_page.h"
@@ -307,6 +308,27 @@ int main()
               FanyImeVModeInput::TriggerFromPayload(L'1') == Trigger::UppercaseOnly &&
               FanyImeVModeInput::TriggerFromPayload(L'x') == Trigger::Off &&
               FanyImeVModeInput::PayloadFromTrigger(Trigger::UppercaseOnly) == L'1');
+    }
+    // U 模式的形状规则：全拼 U、u 都进，双拼和五笔只认大写 U；单独一个 u 仍是普通输入。
+    {
+        using FanyImeRadicalInput::Trigger;
+        CHECK(FanyImeRadicalInput::IsComposition("Ur", 2, Trigger::AnyCase));
+        CHECK(FanyImeRadicalInput::IsComposition("Ur", 2, Trigger::UppercaseOnly));
+        CHECK(!FanyImeRadicalInput::IsComposition("ur", 2, Trigger::UppercaseOnly));
+        CHECK(FanyImeRadicalInput::IsComposition("ur", 2, Trigger::AnyCase));
+        CHECK(!FanyImeRadicalInput::IsComposition("u", 1, Trigger::AnyCase) &&
+              !FanyImeRadicalInput::IsComposition("U", 1, Trigger::AnyCase) &&
+              !FanyImeRadicalInput::IsComposition("nu", 2, Trigger::AnyCase) &&
+              !FanyImeRadicalInput::IsComposition("", 0, Trigger::AnyCase));
+        CHECK(FanyImeRadicalInput::IsComposition("uir1", 4, Trigger::AnyCase));
+        CHECK(!FanyImeRadicalInput::IsComposition("u'", 2, Trigger::AnyCase) &&
+              !FanyImeRadicalInput::IsComposition("u1", 2, Trigger::AnyCase));
+        CHECK(!FanyImeRadicalInput::IsComposition("uiriri", 6, Trigger::Off));
+        // 光标在中间：第一个字母之后都能继续插字母。
+        const std::wstring typed = L"Uri";
+        CHECK(FanyImeRadicalInput::AcceptsAt(typed.data(), typed.size(), typed.size(), L'x', Trigger::AnyCase));
+        CHECK(!FanyImeRadicalInput::AcceptsAt(typed.data(), typed.size(), typed.size(), L'1', Trigger::AnyCase));
+        CHECK(!FanyImeRadicalInput::AcceptsAt(typed.data(), typed.size(), 0, L'x', Trigger::AnyCase));
     }
     // 直接辅助码的 / 与 ; 形状规则，TSF（WCHAR）与引擎（char）共用。
     const auto slash_at = [](const std::wstring &text, std::size_t caret) {

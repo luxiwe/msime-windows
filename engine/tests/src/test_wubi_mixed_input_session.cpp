@@ -286,6 +286,18 @@ int main()
                 literal.recompute_candidates();
                 require(literal.wubi_unique_four_code(), "The literal flag outlived the sequence it was set with.");
             }
+
+            // U 模式在五笔下也是 literal：U 不是字根键，后面的部件拼音也不是码。不当 literal 的话，
+            // 前缀会被裁掉、串被截成四码，拆字表上就查不到东西（ririri 只剩 riri）。
+            {
+                InputSession radical(SchemeType::Wubi, GetXiaoheShuangpinProfile(), paths_for(resources, root, next()));
+                radical.set_wubi_input_options(WubiInputOptions{false});
+                set_raw(radical, "Uririri", true);
+                require(radical.get_pinyin_sequence_with_cases() == "Uririri",
+                        "U mode input was clipped as a wubi code.");
+                require(!radical.wubi_four_code_is_complete(),
+                        "U mode input was reported as a complete wubi code and could auto-commit.");
+            }
         }
 
         // The scheme's two views stay in step under key-driven editing too: Backspace after literal

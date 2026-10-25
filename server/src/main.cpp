@@ -204,8 +204,8 @@ int CALLBACK WinMain(_In_ HINSTANCE hInstance, _In_ HINSTANCE /*hPrevInstance*/,
                            [](MixedCandidates::Result result, const std::string &input, uint64_t generation) {
                                FanyNamedPipe::EnqueueMixedCandidates(std::move(result), input, generation);
                            });
-    // U 模式第一次查询要解析十几万行的拆字表、加载 cpp-pinyin 词典，放在按键回复里会卡住 Shift+U
-    // 之后的第一个字母。没开这个模式的用户不多读这两份数据。
+    // U 模式第一次查询要解析十几万行的拆字表、加载 cpp-pinyin 词典，放在按键回复里会卡住 U 之后
+    // 的第一个字母。没开这个模式的用户不多读这两份数据。
     std::thread radical_warmup;
     if (GetConfiguredRadicalModeEnabled())
     {

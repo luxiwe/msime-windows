@@ -469,6 +469,7 @@ std::wstring BuildConfigMessage(bool refresh_skin_catalog)
             {"linear_step", frequency.linear_step}}},
           {"utility",
            {{"radical_mode", GetConfiguredRadicalModeEnabled()},
+            {"radical_mode_lowercase", GetConfiguredRadicalModeLowercaseEnabled()},
             {"quick_phrase", GetConfiguredQuickPhraseEnabled()},
             {"quick_phrase_candidates", GetConfiguredQuickPhraseCandidatesEnabled()},
             {"quick_phrase_frequency", GetConfiguredQuickPhraseFrequencyEnabled()},
@@ -872,6 +873,8 @@ bool ApplyConfigUpdate(const json::object &data)
         return SetConfiguredAssocSentenceCollocationModel(json::value_to<std::string>(data.at("value")));
     if (path == "utility.radical_mode")
         return SetConfiguredRadicalModeEnabled(json::value_to<bool>(data.at("value")));
+    if (path == "utility.radical_mode_lowercase")
+        return SetConfiguredRadicalModeLowercaseEnabled(json::value_to<bool>(data.at("value")));
     if (path == "utility.quick_phrase")
         return SetConfiguredQuickPhraseEnabled(json::value_to<bool>(data.at("value")));
     if (path == "utility.quick_phrase_candidates")

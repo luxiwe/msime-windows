@@ -32,6 +32,7 @@
 #include "english/english_ime.h"
 #include "config/ime_config.h"
 #include "engine/contracts/date_time_input.h"
+#include "engine/contracts/radical_input.h"
 #include "engine/contracts/uiless_page.h"
 #include "engine/contracts/v_mode_input.h"
 #include "conversion/chinese_converter.h"
@@ -44,7 +45,6 @@ using namespace event_listener_detail;
 namespace event_listener_detail
 {
 bool g_quick_phrase_triggered = false;
-bool g_radical_mode_triggered = false;
 bool g_date_time_mode_triggered = false;
 bool g_emoji_mode_triggered = false;
 bool g_kaomoji_mode_triggered = false;
@@ -241,12 +241,13 @@ bool IsQuickPhraseCompositionActive(const std::string &raw)
     return g_quick_phrase_triggered && !raw.empty() && raw.front() == 'K';
 }
 
-// U 模式：Shift+U 唤醒后整段组合都归它，和 K 模式一样只看唤醒标记与首字符。串里混进的撇号、
-// 大写字母等照常进 raw（TSF 的按键缓冲同样收下它们，两侧才不会错位），只是查不出候选；
-// 判据若要求其余全是 a-z，这种串就会掉回普通拼音路径。
+// U 模式：和 V 模式一样没有单独的触发标记，从 U（全拼默认还有 u，可用 radical_mode_lowercase 关掉）
+// 开始、后面紧跟一个字母就是，规则见 engine/contracts/radical_input.h。所以单独一个 u 仍是普通输入，
+// nu / lu 里的 u 也不会被认成 U 模式。串里混进的撇号、大写字母等照常进 raw，只是查不出候选；判据若
+// 要求其余全是 a-z，这种串就会掉回普通拼音路径，预编辑在组合中途变形。
 bool IsRadicalCompositionActive(const std::string &raw)
 {
-    return g_radical_mode_triggered && !raw.empty() && raw.front() == 'U';
+    return FanyImeRadicalInput::IsComposition(raw.data(), raw.size(), CurrentRadicalModeTrigger());
 }
 
 // T 后面是小写唤醒词，或者以数字开头的指定日期时间（形状见 engine/contracts/date_time_input.h）。后者
@@ -315,7 +316,6 @@ bool IsVModeCompositionActive(const std::string &raw)
 void ClearSpecialModeTriggers()
 {
     g_quick_phrase_triggered = false;
-    g_radical_mode_triggered = false;
     g_date_time_mode_triggered = false;
     g_emoji_mode_triggered = false;
     g_kaomoji_mode_triggered = false;
@@ -339,7 +339,10 @@ bool IsWubiLiteralComposition(const std::string &raw)
 {
     // T 模式按触发标记认，不按 IsDateTimeCompositionActive 的形状认：模式里敲了主体不收的键
     // （TdatE），组合只是不再出日期，里面的字母仍然不是要上屏的五笔码（tdat）。
-    return (g_date_time_mode_triggered && !raw.empty() && raw.front() == 'T') || IsVModeCompositionActive(raw);
+    // U 模式同理：五笔按大写 U 进入后，U 本身不是字根键，后面的部件拼音也不是五笔码，
+    // 照五笔规则裁码会把前缀裁掉、把串截成四码，拆字查询就查不到东西了。
+    return (g_date_time_mode_triggered && !raw.empty() && raw.front() == 'T') || IsVModeCompositionActive(raw) ||
+           IsRadicalCompositionActive(raw);
 }
 } // namespace event_listener_detail
 

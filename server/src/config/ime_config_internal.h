@@ -215,6 +215,7 @@ extern bool g_emoji_mixed_input_enabled;
 extern bool g_kaomoji_mixed_input_enabled;
 extern bool g_symbol_mixed_input_enabled;
 extern bool g_radical_mode_enabled;
+extern bool g_radical_mode_lowercase_enabled;
 extern bool g_quick_phrase_enabled;
 extern bool g_quick_phrase_candidates_enabled;
 extern bool g_quick_phrase_frequency_enabled;

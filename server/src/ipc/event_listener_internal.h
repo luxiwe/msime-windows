@@ -36,7 +36,6 @@ const std::string &JevSelectionWord();
 using AsyncRequestOrigin = FanyImeIpc::AsyncRequestOrigin;
 
 extern bool g_quick_phrase_triggered;
-extern bool g_radical_mode_triggered;
 extern bool g_date_time_mode_triggered;
 extern bool g_emoji_mode_triggered;
 extern bool g_kaomoji_mode_triggered;
@@ -92,7 +91,7 @@ void ApplyUiLessFromPacket(const FanyImeNamedpipeData &pipe_data);
 void RequestShowCandidateWindow();
 void HideCandidateWindowAndDropItems();
 bool IsQuickPhraseCompositionActive(const std::string &raw);
-// U 模式（部件拆字反查）：唤醒键 U 之后是一串小写 a-z 的部件拼音连写。
+// U 模式（部件拆字反查）：和 V 模式一样没有触发标记，按输入串形状判断（engine/contracts/radical_input.h）。
 bool IsRadicalCompositionActive(const std::string &raw);
 bool IsDateTimeCompositionActive(const std::string &raw);
 bool IsEmojiCompositionActive(const std::string &raw);

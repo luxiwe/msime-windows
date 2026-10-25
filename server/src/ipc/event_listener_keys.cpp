@@ -34,9 +34,9 @@ namespace
 {
 bool IsShiftLetterSpecialModeTriggered()
 {
-    return g_quick_phrase_triggered || g_radical_mode_triggered || g_date_time_mode_triggered ||
-           g_emoji_mode_triggered || g_kaomoji_mode_triggered || g_symbol_mode_triggered || g_jianpin_mode_triggered ||
-           g_y_mode_triggered || g_r_mode_triggered;
+    return g_quick_phrase_triggered || g_date_time_mode_triggered || g_emoji_mode_triggered ||
+           g_kaomoji_mode_triggered || g_symbol_mode_triggered || g_jianpin_mode_triggered || g_y_mode_triggered ||
+           g_r_mode_triggered;
 }
 
 // 字母键写进 raw 的那个字母：键产生了字母就照收（保留大小写），否则取键位本身的小写字母。
@@ -1143,9 +1143,10 @@ void HandleImeKey(uint64_t client_id, uint64_t activation_epoch, uint64_t reques
         GetConfiguredEnterLearnsEnglishWord())
     {
         std::string english_word;
-        // V 模式没有触发标记，按输入串认：回车上屏的 V123 不是要学的英文词。
-        const bool shift_letter_special_mode =
-            IsShiftLetterSpecialModeTriggered() || IsVModeCompositionActive(input_before_key);
+        // U 模式和 V 模式一样没有触发标记，按输入串认：回车上屏的 ririri 不是要学的英文词。
+        const bool shift_letter_special_mode = IsShiftLetterSpecialModeTriggered() ||
+                                               IsVModeCompositionActive(input_before_key) ||
+                                               IsRadicalCompositionActive(input_before_key);
         if (FanyImeIpc::ShouldLearnEnteredEnglishWord(g_english_input_mode, shift_letter_special_mode, chinese_scheme,
                                                       g_inputSession->is_all_complete_pure_pinyin()))
             english_word = g_r_mode_triggered ? "R" + input_before_key : input_before_key;
@@ -1164,9 +1165,6 @@ void HandleImeKey(uint64_t client_id, uint64_t activation_epoch, uint64_t reques
     if (chinese_scheme && !g_english_input_mode && GetConfiguredQuickPhraseEnabled() && input_before_key.empty() &&
         Global::Keycode == 'K' && Global::Wch == L'K' && shift_only)
         g_quick_phrase_triggered = true;
-    if (chinese_scheme && !g_english_input_mode && GetConfiguredRadicalModeEnabled() && input_before_key.empty() &&
-        Global::Keycode == 'U' && Global::Wch == L'U' && shift_only)
-        g_radical_mode_triggered = true;
     if (date_time_scheme && !g_english_input_mode && GetConfiguredDateTimeModeEnabled() && input_before_key.empty() &&
         Global::Keycode == 'T' && Global::Wch == L'T' && shift_only)
         g_date_time_mode_triggered = true;
@@ -1383,7 +1381,7 @@ void HandleImeKey(uint64_t client_id, uint64_t activation_epoch, uint64_t reques
     }
     if (!g_english_input_mode && IsRadicalCompositionActive(GlobalIme::composition.raw_input_with_cases))
     {
-        // Keep preedit identical to the typed U+letters sequence.
+        // Keep preedit identical to the typed U+letters sequence (lowercase u in quanpin).
         GlobalIme::composition.segmented_pinyin = GlobalIme::composition.raw_input_with_cases;
     }
     if (!g_english_input_mode && IsDateTimeCompositionActive(GlobalIme::composition.raw_input_with_cases))

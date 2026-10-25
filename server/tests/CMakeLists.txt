@@ -57,6 +57,7 @@ set(TEST_SOURCE_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/benchmark_model_path.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/test_date_time_query.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/test_v_mode_query.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/test_radical_query.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/test_emoji_query.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/test_kaomoji_query.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/test_jianpin_query.cpp"

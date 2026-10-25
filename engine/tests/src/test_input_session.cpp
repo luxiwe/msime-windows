@@ -1608,14 +1608,14 @@ void run_autocorrect_selection_consumption_tests(const std::filesystem::path &da
         require(committed.commit == "不会" && !session.has_composition(),
                 "Selecting the insertion-corrected word must consume the whole input.");
     }
-    // 只选前缀「不」：剩下的部分（hui 或 uhui）仍要能出「会」。
+    // 只选前缀「不」：剩下的 uhui 首字母不能起音节，纠错不再接手（见
+    // run_leading_syllable_autocorrect_guard_tests），不会纠成 hui——那正是「u 被吞掉」的形态。
     {
         metasequoia::InputSession session(SchemeType::Quanpin, all_types, true, true, true, paths);
         type(session, "buuhui");
         (void)session.select_candidate(candidate_index(session, "不"));
-        require(session.has_composition() && (session.preedit() == "hui" || session.preedit() == "uhui") &&
-                    find_candidate_index(session, "会") < session.candidates().size(),
-                "After a corrected prefix the rest must still read as hui.");
+        require(session.has_composition() && find_candidate_index(session, "会") == session.candidates().size(),
+                "A leftover whose first letter cannot start a syllable must not be corrected away.");
     }
     // 漏打一个 a：选「张」只消耗 zhng，剩下 guo。漏字位独立后要显式打开。
     {
@@ -2041,6 +2041,49 @@ void run_autocorrect_pure_jianpin_guard_tests(const std::filesystem::path &data_
     std::filesystem::remove_all(directory);
 }
 
+// i / u / v 都不能开始任何音节，这些输入不可能是拼音拼写。纠错若按换位 / 邻键把首字母
+// 改写成合法读法，用户有意打的首字母就消失了：uri 开四项纠错会被换位成 rui（瑞），
+// 关掉 U 模式的小写触发后全拼的 u 正是这样被吞掉的。
+void run_leading_syllable_autocorrect_guard_tests(const std::filesystem::path &data_directory)
+{
+    const std::filesystem::path directory = data_directory / "autocorrect-leading-initial";
+    std::filesystem::create_directories(directory);
+    {
+        Database database(directory / "msime.db");
+        database.execute("CREATE TABLE tbl_1_r(key TEXT,jp TEXT,value TEXT,weight INTEGER);"
+                         "INSERT INTO tbl_1_r VALUES('rui','r','瑞',900);"
+                         "INSERT INTO tbl_1_r VALUES('ri','r','日',800);");
+    }
+
+    metasequoia::RuntimePaths paths;
+    paths.resources = directory;
+    paths.user_data = directory;
+    paths.cache = directory;
+    paths.dictionaries = directory;
+    const unsigned all = quanpin::kAutocorrectTransposition | quanpin::kAutocorrectNeighbor |
+                         quanpin::kAutocorrectDeletion | quanpin::kAutocorrectInsertion;
+
+    for (const char *input : {"u", "ur", "uri", "urij", "iao", "van"})
+    {
+        metasequoia::InputSession session(SchemeType::Quanpin, all, true, true, true, paths);
+        type(session, input);
+        require(session.candidates().empty(),
+                (std::string("An input whose first letter cannot start a syllable must not be corrected: ") + input)
+                    .c_str());
+        require(session.get_pinyin_sequence_with_cases() == input,
+                "The typed letters must stay unchanged when autocorrection does not apply.");
+    }
+
+    // 同一张 r 表在合法输入上照旧命中：上面的空结果来自护栏，不是词库没准备好。
+    {
+        metasequoia::InputSession session(SchemeType::Quanpin, all, true, true, true, paths);
+        type(session, "rui");
+        require(candidate_index(session, "瑞") == 0, "A legal reading must still answer with the fixture table.");
+    }
+
+    std::filesystem::remove_all(directory);
+}
+
 void run_caret_prefix_session_tests(const std::filesystem::path &data_directory)
 {
     const std::filesystem::path directory = data_directory / "caret-prefix";
@@ -2280,6 +2323,7 @@ void run_caret_prefix_session_tests(const std::filesystem::path &data_directory)
 
 int run_test()
 {
+
     const auto unique_suffix = std::to_string(std::chrono::high_resolution_clock::now().time_since_epoch().count());
     const std::filesystem::path data_directory =
         std::filesystem::temp_directory_path() / std::filesystem::u8path("metasequoia-session-词库-" + unique_suffix);
@@ -3201,6 +3245,7 @@ int run_test()
 
     run_autocorrect_generated_space_tests(data_directory);
     run_autocorrect_pure_jianpin_guard_tests(data_directory);
+    run_leading_syllable_autocorrect_guard_tests(data_directory);
 #endif
 
 #ifndef METASEQUOIA_SKIP_FREQUENCY_TESTS

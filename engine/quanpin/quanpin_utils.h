@@ -82,6 +82,12 @@ inline constexpr unsigned autocorrect_types_from_switches(const bool transpositi
            (deletion ? kAutocorrectDeletion : 0u) | (insertion ? kAutocorrectInsertion : 0u);
 }
 
+// 首字母不能开始任何音节时把纠错掩码清零。全拼里只有 i / u / v 不能起音节：u 必须跟在
+// 声母后（nu / lu），i 只出现在 zhi / chi / shi / ri / zi / ci / si，v 只是 ü 的占位。
+// 这些输入不可能是拼音拼写，纠错只会把用户有意打的首字母换成别的字母——uri 被换位纠成
+// rui，u 就消失了。关掉 U 模式的小写触发后，全拼的 u 开头串正是靠这条留在字面 / 英文兜底上。
+unsigned autocorrect_types_for_input(const std::string &raw_input, unsigned autocorrect_types);
+
 // 掩码下手误别名层（cut_pinyin_by_mode 的 include_correction_aliases）是否生效。
 // 别名层是「换位形状 / 多一个 h / 漏一个 g」这类拼写层改写，只归换位与邻键两个开关管，
 // 漏字 / 多字开关独立后也不带别名层：只带后两位的掩码按「关」处理。方案、词典、

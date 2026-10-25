@@ -181,7 +181,7 @@ std::vector<std::string> SymbolMixedCodes(const std::string &current_input, Sche
     return codes;
 }
 
-// U 模式（部件拆字反查）：唤醒键 U 之后已经输入了至少一个部件字母才算一次可查询的输入。
+// U 模式（部件拆字反查）：前缀 U（全拼还有 u）之后已经输入了至少一个部件字母才算一次可查询的输入。
 bool IsRadicalInput(const std::string &raw)
 {
     return IsRadicalCompositionActive(raw) && raw.size() > 1;
@@ -842,7 +842,7 @@ void PrepareCandidateList(uint64_t client_id, uint64_t activation_epoch)
 
     // R4：光标前缀为空时不造「整串假候选」——前缀为空就该没有候选（候选窗由调用方
     // 收起）。caret 未设置时 prefix_end 等于串长，此分支永不触发，现状零差异。
-    if (items.empty() && !g_english_input_mode &&
+    if (items.empty() && !g_english_input_mode && !IsSpecialModeCompositionActive(current_input) &&
         !FanyImeIpc::IsCaretPrefixEmpty(g_inputSession->prefix_end(),
                                         g_inputSession->get_pinyin_sequence_with_cases().size()))
     {

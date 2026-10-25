@@ -404,11 +404,12 @@ void ImeSession::apply_request_options(QueryRequest &request) const
         request.direct_helpcode_uppercase_marker = direct_helpcode_uppercase_marker_;
     }
     request.enable_quanpin_helpcode = enable_quanpin_helpcode_;
-    request.enable_quanpin_autocorrect_transposition =
-        (quanpin_autocorrect_types_ & quanpin::kAutocorrectTransposition) != 0;
-    request.enable_quanpin_autocorrect_neighbor = (quanpin_autocorrect_types_ & quanpin::kAutocorrectNeighbor) != 0;
-    request.enable_quanpin_autocorrect_deletion = (quanpin_autocorrect_types_ & quanpin::kAutocorrectDeletion) != 0;
-    request.enable_quanpin_autocorrect_insertion = (quanpin_autocorrect_types_ & quanpin::kAutocorrectInsertion) != 0;
+    const unsigned autocorrect_types =
+        quanpin::autocorrect_types_for_input(request.raw_input, quanpin_autocorrect_types_);
+    request.enable_quanpin_autocorrect_transposition = (autocorrect_types & quanpin::kAutocorrectTransposition) != 0;
+    request.enable_quanpin_autocorrect_neighbor = (autocorrect_types & quanpin::kAutocorrectNeighbor) != 0;
+    request.enable_quanpin_autocorrect_deletion = (autocorrect_types & quanpin::kAutocorrectDeletion) != 0;
+    request.enable_quanpin_autocorrect_insertion = (autocorrect_types & quanpin::kAutocorrectInsertion) != 0;
     request.fuzzy_pinyin = fuzzy_pinyin_;
     request.sentence_association = sentence_association_;
     request.rescoring_context = rescoring_context_;

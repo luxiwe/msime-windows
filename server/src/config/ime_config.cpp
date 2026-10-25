@@ -175,6 +175,7 @@ bool g_emoji_mixed_input_enabled = false;
 bool g_kaomoji_mixed_input_enabled = false;
 bool g_symbol_mixed_input_enabled = false;
 bool g_radical_mode_enabled = true;
+bool g_radical_mode_lowercase_enabled = true;
 bool g_quick_phrase_enabled = true;
 bool g_quick_phrase_candidates_enabled = false;
 bool g_quick_phrase_frequency_enabled = true;
@@ -685,6 +686,7 @@ bool LoadImeConfig()
         g_symbol_mixed_input_enabled = tbl["general"]["symbol_mixed_input"].value_or(false);
         // 改名前的 unicode_mode 作迁移兜底；升级合并已把它搬到新键，新写入只用新键。
         g_radical_mode_enabled = tbl["utility"]["radical_mode"].value_or(tbl["utility"]["unicode_mode"].value_or(true));
+        g_radical_mode_lowercase_enabled = tbl["utility"]["radical_mode_lowercase"].value_or(true);
         g_quick_phrase_enabled = tbl["utility"]["quick_phrase"].value_or(true);
         g_quick_phrase_candidates_enabled = tbl["utility"]["quick_phrase_candidates"].value_or(false);
         g_quick_phrase_frequency_enabled = tbl["utility"]["quick_phrase_frequency"].value_or(true);

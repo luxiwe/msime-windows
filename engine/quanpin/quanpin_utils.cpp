@@ -199,6 +199,21 @@ const std::unordered_set<std::string> &prefix_pinyin_set()
     return kSet;
 }
 
+unsigned autocorrect_types_for_input(const std::string &raw_input, unsigned autocorrect_types)
+{
+    if (autocorrect_types == 0 || raw_input.empty())
+    {
+        return autocorrect_types;
+    }
+    const auto first = static_cast<unsigned char>(raw_input.front());
+    if (first >= 0x80 || !std::isalpha(first))
+    {
+        return autocorrect_types;
+    }
+    const std::string initial(1, static_cast<char>(std::tolower(first)));
+    return prefix_pinyin_set().count(initial) != 0 ? autocorrect_types : 0;
+}
+
 bool has_only_complete_pinyin_segments(const Segments &segments)
 {
     if (segments.empty())

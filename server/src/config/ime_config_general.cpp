@@ -3,6 +3,7 @@
 #include <atomic>
 #include <string>
 #include "clipboard/clipboard_history.h"
+#include "engine/contracts/radical_input.h"
 #include "engine/contracts/v_mode_input.h"
 #include "statistics/stats_store.h"
 
@@ -379,6 +380,21 @@ bool SetConfiguredRadicalModeEnabled(bool enabled)
     return true;
 }
 
+bool GetConfiguredRadicalModeLowercaseEnabled()
+{
+    return g_radical_mode_lowercase_enabled;
+}
+
+bool SetConfiguredRadicalModeLowercaseEnabled(bool enabled)
+{
+    if (!WriteConfiguredValue("utility", "radical_mode_lowercase", enabled ? "true" : "false"))
+    {
+        return false;
+    }
+    g_radical_mode_lowercase_enabled = enabled;
+    return true;
+}
+
 bool GetConfiguredQuickPhraseEnabled()
 {
     return g_quick_phrase_enabled;
@@ -602,6 +618,22 @@ std::wstring FormatVModeWorkerPayload()
                             : scheme == SchemeType::Wubi      ? Trigger::UppercaseOnly
                                                               : Trigger::Off;
     return std::wstring(1, FanyImeVModeInput::PayloadFromTrigger(trigger));
+}
+
+FanyImeRadicalInput::Trigger CurrentRadicalModeTrigger()
+{
+    using FanyImeRadicalInput::Trigger;
+    // 和 V 模式同一套档位。全拼音节表里没有 u 开头的音节，所以全拼默认放开小写 u；双拼的 u 是韵母键、
+    // 五笔的 u 是字根键，两者只认大写 U，否则会抢走它们的编码键。
+    // radical_mode_lowercase 是给全拼的退路：关掉后小写 u 照旧当拼音/英文打，只留 Shift+U 进模式。
+    const SchemeType scheme = GetConfiguredActiveInputScheme();
+    if (!g_radical_mode_enabled)
+        return Trigger::Off;
+    if (scheme == SchemeType::Quanpin)
+        return g_radical_mode_lowercase_enabled ? Trigger::AnyCase : Trigger::UppercaseOnly;
+    if (scheme == SchemeType::Shuangpin || scheme == SchemeType::Wubi)
+        return Trigger::UppercaseOnly;
+    return Trigger::Off;
 }
 
 bool GetConfiguredClipboardHistoryEnabled()

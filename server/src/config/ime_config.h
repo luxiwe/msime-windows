@@ -5,6 +5,7 @@
 #include "engine/core/scheme_type.h"
 #include "engine/shuangpin/shuangpin_profile.h"
 #include "engine/contracts/input_state_shortcuts.h"
+#include "engine/contracts/radical_input.h"
 #include <toml++/toml.h>
 #include <filesystem>
 #include <map>
@@ -562,9 +563,14 @@ double GetConfiguredAssocSentenceCollocationPenalty();
 double GetConfiguredAssocSentenceCollocationNonPenalty();
 double GetConfiguredAssocSentenceCollocationWeakPenalty();
 double GetConfiguredAssocSentenceCollocationRearPenalty();
-// Shift+U 部件拆字反查（U 模式）。
+// U 部件拆字反查（U 模式）。全拼默认 U、u 都进（可用 radical_mode_lowercase 关掉小写），双拼和五笔
+// 按大写 U 进，规则见 engine/contracts/radical_input.h。
 bool GetConfiguredRadicalModeEnabled();
 bool SetConfiguredRadicalModeEnabled(bool enabled);
+// U 模式的子开关：全拼下小写 u 也进入 U 模式。只有全拼受影响，双拼和五笔始终只认大写 U。
+// 关掉后全拼和其余方案一样只认 Shift+U，给那些想把 u 开头当普通拼音/英文打的人留一条退路。
+bool GetConfiguredRadicalModeLowercaseEnabled();
+bool SetConfiguredRadicalModeLowercaseEnabled(bool enabled);
 // Shift+K 快捷短语模式。
 bool GetConfiguredQuickPhraseEnabled();
 bool SetConfiguredQuickPhraseEnabled(bool enabled);
@@ -605,6 +611,9 @@ bool SetConfiguredVModeEnabled(bool enabled);
 // VModeChanged 的载荷："0" 关着或不是全拼/双拼/五笔，"1" 双拼或五笔（只认大写 V），
 // "2" 全拼（V、v 都认）。
 std::wstring FormatVModeWorkerPayload();
+// U 模式在当前方案下认哪个前缀。只给 Server 自己用：TSF 不为 U 模式吃任何键，字母照常进按键缓冲，
+// 所以这个档位不需要跨进程同步，也就没有对应的 opcode。
+FanyImeRadicalInput::Trigger CurrentRadicalModeTrigger();
 bool GetConfiguredClipboardHistoryEnabled();
 bool SetConfiguredClipboardHistoryEnabled(bool enabled);
 bool GetConfiguredLanguageBarEnabled();

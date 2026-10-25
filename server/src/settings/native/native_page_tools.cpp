@@ -262,12 +262,28 @@ VisualPtr BuildToolsPage(PageContext &context)
                             L"中文模式下按 Shift+T，再输入 rq / riqi / date 可输入当前日期；输入 sj / shijian / time "
                             L"可输入当前时间；输入 xq / xingqi / week 可输入当前星期。全拼、双拼、五笔都支持。",
                             BindToggle(context, "utility.date_time_mode")));
-    page.AddSection(std::make_shared<TopAlignedRow>(
-        QuickTitleBlock(L"U 模式（部件拆字）",
-                        L"中文模式下按 Shift+U，输入一个字各组成部分的拼音连写即可候选出该字，候"
-                        L"选上会反显它的读音。例如「晶」= 日+日+日，输入 ririri。空格上屏；数字选"
-                        L"词。"),
-        BindToggle(context, "utility.radical_mode"), 2.0f));
+    {
+        auto lowercase = BindToggle(context, "utility.radical_mode_lowercase");
+        std::vector<std::shared_ptr<ToggleSwitch>> subs = {lowercase};
+        std::shared_ptr<Hideable> hint;
+        ToggleSection section = MakeToggleSection(
+            context, L"U 模式（部件拆字）", "utility.radical_mode",
+            [subs](bool disabled) {
+                for (const auto &toggle : subs)
+                    toggle->SetDisabled(disabled);
+            },
+            hint);
+        auto &details = *section.details;
+        details.Add(
+            DetailsDescription(L"输入一个字各组成部分的拼音连写即可候选出该字，候选上会反显它的读音。例如「晶」= "
+                               L"日+日+日，输入 ririri。空格上屏；数字选词。双拼和五笔按 Shift+U 进入。"));
+        details.Add(DetailsRow(context, L"全拼小写 u 触发",
+                               L"开启后全拼直接输入 u 加字母即可进入，例如 uririri；关闭后全拼也只认 Shift+U，"
+                               L"u 开头照旧按英文或字面输入，不做全拼纠错。双拼和五笔不受此项影响，始终只认大写 U",
+                               lowercase));
+        details.Add(hint);
+        page.AddSection(section.body);
+    }
     page.AddSection(std::make_shared<TopAlignedRow>(
         QuickTitleBlock(L"Emoji 快捷输入(E 模式)",
                         L"中文模式下按 Shift+E，再输入全拼 / 简拼 / 双拼 / 英文关键词即可输入 "
